@@ -2,14 +2,22 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: API specification
+  version: 0.2.0
+  description: Assignment Guy API — contract-first specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: schools
+    description: School directory
+  - name: departments
+    description: Department directory
+  - name: courses
+    description: Course directory
+  - name: users
+    description: User profile and onboarding
 paths:
   /healthz:
     get:
@@ -24,8 +32,251 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /v1/schools:
+    get:
+      operationId: listSchools
+      tags: [schools]
+      summary: List all schools
+      description: Returns all schools. Empty array when none exist.
+      parameters:
+        - name: search
+          in: query
+          description: Filter schools by name (case-insensitive partial match)
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of schools
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchoolListResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/schools/{schoolId}/departments:
+    get:
+      operationId: listDepartmentsBySchool
+      tags: [departments]
+      summary: List departments for a school
+      description: Returns all departments for the given school. Empty array when none exist.
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of departments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentListResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/users/me:
+    get:
+      operationId: getMyProfile
+      tags: [users]
+      summary: Get the authenticated user's profile
+      description: Returns the full profile for the current user including school, department, and enrolled courses. Returns 404 if onboarding has not been completed yet.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Profile not found (onboarding not yet complete)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateMyProfile
+      tags: [users]
+      summary: Create or update the authenticated user's profile
+      description: Upserts the user profile and replaces course enrolments. Called at the end of onboarding and on profile updates.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Profile saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required:
+                  - success
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/departments/{departmentId}/courses:
+    get:
+      operationId: listCoursesByDepartment
+      tags: [courses]
+      summary: List courses for a department
+      description: Returns courses for a department. Optional level filter.
+      parameters:
+        - name: departmentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: level
+          in: query
+          description: "Filter by academic level (1=Year1, 2=Year2, 3=Year3, 4=Year4, 5=Postgrad, 0=Other)"
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of courses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseListResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: string
+        profilePhoto:
+          type: string
+          nullable: true
+        school:
+          $ref: "#/components/schemas/School"
+          nullable: true
+        department:
+          $ref: "#/components/schemas/Department"
+          nullable: true
+        level:
+          type: integer
+          nullable: true
+        courses:
+          type: array
+          items:
+            $ref: "#/components/schemas/Course"
+        contributionScore:
+          type: integer
+        role:
+          type: string
+          enum: [student, contributor, trusted_contributor, admin]
+        hasCompletedOnboarding:
+          type: boolean
+      required:
+        - id
+        - email
+        - displayName
+        - courses
+        - contributionScore
+        - role
+        - hasCompletedOnboarding
+
+    UserProfileResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/UserProfile"
+      required:
+        - success
+        - data
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        displayName:
+          type: string
+        schoolId:
+          type: string
+          nullable: true
+        departmentId:
+          type: string
+          nullable: true
+        level:
+          type: integer
+          nullable: true
+        courseIds:
+          type: array
+          items:
+            type: string
+      required:
+        - displayName
+
     HealthStatus:
       type: object
       properties:
@@ -34,3 +285,110 @@ components:
       required:
         - status
 
+    School:
+      type: object
+      properties:
+        school_id:
+          type: string
+        school_name:
+          type: string
+        country:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - school_id
+        - school_name
+        - created_at
+
+    Department:
+      type: object
+      properties:
+        department_id:
+          type: string
+        school_id:
+          type: string
+        department_name:
+          type: string
+      required:
+        - department_id
+        - school_id
+        - department_name
+
+    Course:
+      type: object
+      properties:
+        course_id:
+          type: string
+        department_id:
+          type: string
+        course_code:
+          type: string
+        course_name:
+          type: string
+        level:
+          type: integer
+          nullable: true
+        semester:
+          type: string
+          nullable: true
+      required:
+        - course_id
+        - department_id
+        - course_code
+        - course_name
+
+    SchoolListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/School"
+      required:
+        - success
+        - data
+
+    DepartmentListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Department"
+      required:
+        - success
+        - data
+
+    CourseListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Course"
+      required:
+        - success
+        - data
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        code:
+          type: string
+      required:
+        - success
+        - message
+        - code
