@@ -6,8 +6,6 @@ import {
   boolean,
   timestamp,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
 import { schoolsTable } from "./schools";
 import { departmentsTable } from "./departments";
 
@@ -39,10 +37,4 @@ export const userProfilesTable = pgTable("user_profiles", {
   updated_at: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const insertUserProfileSchema = createInsertSchema(userProfilesTable).omit({
-  created_at: true,
-  updated_at: true,
-});
-
-export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
 export type UserProfile = typeof userProfilesTable.$inferSelect;

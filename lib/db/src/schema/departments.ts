@@ -1,6 +1,4 @@
 import { pgTable, uuid, text } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
 import { schoolsTable } from "./schools";
 
 export const departmentsTable = pgTable("departments", {
@@ -11,9 +9,4 @@ export const departmentsTable = pgTable("departments", {
   department_name: text("department_name").notNull(),
 });
 
-export const insertDepartmentSchema = createInsertSchema(departmentsTable).omit({
-  department_id: true,
-});
-
-export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
 export type Department = typeof departmentsTable.$inferSelect;
