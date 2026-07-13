@@ -40,6 +40,8 @@ interface AuthContextValue {
   resendConfirmationEmail: () => Promise<void>;
   /** Cancel pending confirmation and return to Welcome. */
   cancelEmailConfirmation: () => void;
+  /** Send a password reset email. */
+  sendPasswordReset: (email: string) => Promise<void>;
   /** Save onboarding selections to local/memory state. */
   updateOnboarding: (data: {
     school?: School;
@@ -203,6 +205,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw new Error(error.message);
   }, [pendingEmailConfirmation]);
 
+  const sendPasswordReset = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      email.trim().toLowerCase(),
+    );
+    if (error) throw new Error(error.message);
+  }, []);
+
   const cancelEmailConfirmation = useCallback(() => {
     setPendingEmailConfirmation(null);
   }, []);
@@ -276,6 +285,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkEmailConfirmed,
     resendConfirmationEmail,
     cancelEmailConfirmation,
+    sendPasswordReset,
     updateOnboarding,
     completeOnboarding,
   };

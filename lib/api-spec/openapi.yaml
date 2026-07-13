@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.2.0
+  version: 0.3.0
   description: Assignment Guy API — contract-first specification
 servers:
   - url: /api
@@ -18,6 +18,8 @@ tags:
     description: Course directory
   - name: users
     description: User profile and onboarding
+  - name: assignments
+    description: Assignment feed and details
 paths:
   /healthz:
     get:
@@ -188,6 +190,126 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CourseListResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/assignments:
+    get:
+      operationId: listAssignments
+      tags: [assignments]
+      summary: List assignments
+      description: Returns assignments ordered by newest first. Defaults to active status.
+      parameters:
+        - name: courseId
+          in: query
+          description: Filter by course ID
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Partial title match (case-insensitive)
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: "Assignment status filter: active | closed | archived"
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Max results (default 30, max 100)
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: Pagination offset (default 0)
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of assignment summaries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssignmentListResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createAssignment
+      tags: [assignments]
+      summary: Create a new assignment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssignmentRequest"
+      responses:
+        "201":
+          description: Assignment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateAssignmentResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/assignments/{assignmentId}:
+    get:
+      operationId: getAssignment
+      tags: [assignments]
+      summary: Get assignment detail
+      description: Returns a single assignment with attachments and context sections.
+      parameters:
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Assignment detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssignmentDetailResponse"
+        "404":
+          description: Assignment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Server error
           content:
@@ -375,6 +497,174 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Course"
+      required:
+        - success
+        - data
+
+    AssignmentSummary:
+      type: object
+      properties:
+        assignment_id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        due_date:
+          type: string
+          format: date-time
+          nullable: true
+        assignment_type:
+          type: string
+        status:
+          type: string
+        verification_status:
+          type: string
+        discussion_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        course_id:
+          type: string
+        course_name:
+          type: string
+        course_code:
+          type: string
+        uploader_display_name:
+          type: string
+      required:
+        - assignment_id
+        - title
+        - assignment_type
+        - status
+        - verification_status
+        - discussion_count
+        - created_at
+        - updated_at
+        - course_id
+        - course_name
+        - course_code
+        - uploader_display_name
+
+    AssignmentAttachmentItem:
+      type: object
+      properties:
+        attachment_id:
+          type: string
+        attachment_type:
+          type: string
+        url:
+          type: string
+          nullable: true
+        filename:
+          type: string
+          nullable: true
+        file_size:
+          type: integer
+          nullable: true
+        sort_order:
+          type: integer
+      required:
+        - attachment_id
+        - attachment_type
+        - sort_order
+
+    AssignmentContextItem:
+      type: object
+      properties:
+        context_id:
+          type: string
+        section_title:
+          type: string
+        content:
+          type: string
+        sort_order:
+          type: integer
+      required:
+        - context_id
+        - section_title
+        - content
+        - sort_order
+
+    AssignmentDetail:
+      allOf:
+        - $ref: "#/components/schemas/AssignmentSummary"
+        - type: object
+          properties:
+            attachments:
+              type: array
+              items:
+                $ref: "#/components/schemas/AssignmentAttachmentItem"
+            context:
+              type: array
+              items:
+                $ref: "#/components/schemas/AssignmentContextItem"
+          required:
+            - attachments
+            - context
+
+    CreateAssignmentRequest:
+      type: object
+      properties:
+        courseId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        assignmentType:
+          type: string
+      required:
+        - courseId
+        - title
+
+    AssignmentListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssignmentSummary"
+        total:
+          type: integer
+      required:
+        - success
+        - data
+        - total
+
+    AssignmentDetailResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/AssignmentDetail"
+      required:
+        - success
+        - data
+
+    CreateAssignmentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            assignment_id:
+              type: string
+          required:
+            - assignment_id
       required:
         - success
         - data

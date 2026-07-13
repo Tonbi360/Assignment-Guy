@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Assignment Guy API — contract-first specification
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.3.0
  */
 import * as zod from 'zod';
 
@@ -131,6 +131,103 @@ export const ListCoursesByDepartmentResponse = zod.object({
   "course_name": zod.string(),
   "level": zod.number().nullish(),
   "semester": zod.string().nullish()
+}))
+})
+
+
+/**
+ * Returns assignments ordered by newest first. Defaults to active status.
+ * @summary List assignments
+ */
+export const ListAssignmentsQueryParams = zod.object({
+  "courseId": zod.coerce.string().optional().describe('Filter by course ID'),
+  "search": zod.coerce.string().optional().describe('Partial title match (case-insensitive)'),
+  "status": zod.coerce.string().optional().describe('Assignment status filter: active | closed | archived'),
+  "limit": zod.coerce.number().optional().describe('Max results (default 30, max 100)'),
+  "offset": zod.coerce.number().optional().describe('Pagination offset (default 0)')
+})
+
+export const ListAssignmentsResponse = zod.object({
+  "success": zod.boolean(),
+  "data": zod.array(zod.object({
+  "assignment_id": zod.string(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "due_date": zod.coerce.date().nullish(),
+  "assignment_type": zod.string(),
+  "status": zod.string(),
+  "verification_status": zod.string(),
+  "discussion_count": zod.number(),
+  "created_at": zod.coerce.date(),
+  "updated_at": zod.coerce.date(),
+  "course_id": zod.string(),
+  "course_name": zod.string(),
+  "course_code": zod.string(),
+  "uploader_display_name": zod.string()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Create a new assignment
+ */
+export const CreateAssignmentBody = zod.object({
+  "courseId": zod.string(),
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "dueDate": zod.coerce.date().optional(),
+  "assignmentType": zod.string().optional()
+})
+
+export const CreateAssignmentResponse = zod.object({
+  "success": zod.boolean(),
+  "data": zod.object({
+  "assignment_id": zod.string()
+})
+})
+
+
+/**
+ * Returns a single assignment with attachments and context sections.
+ * @summary Get assignment detail
+ */
+export const GetAssignmentParams = zod.object({
+  "assignmentId": zod.coerce.string()
+})
+
+export const GetAssignmentResponse = zod.object({
+  "success": zod.boolean(),
+  "data": zod.object({
+  "assignment_id": zod.string(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "due_date": zod.coerce.date().nullish(),
+  "assignment_type": zod.string(),
+  "status": zod.string(),
+  "verification_status": zod.string(),
+  "discussion_count": zod.number(),
+  "created_at": zod.coerce.date(),
+  "updated_at": zod.coerce.date(),
+  "course_id": zod.string(),
+  "course_name": zod.string(),
+  "course_code": zod.string(),
+  "uploader_display_name": zod.string()
+}).and(zod.object({
+  "attachments": zod.array(zod.object({
+  "attachment_id": zod.string(),
+  "attachment_type": zod.string(),
+  "url": zod.string().nullish(),
+  "filename": zod.string().nullish(),
+  "file_size": zod.number().nullish(),
+  "sort_order": zod.number()
+})),
+  "context": zod.array(zod.object({
+  "context_id": zod.string(),
+  "section_title": zod.string(),
+  "content": zod.string(),
+  "sort_order": zod.number()
+}))
 }))
 })
 

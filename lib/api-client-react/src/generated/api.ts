@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Assignment Guy API — contract-first specification
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.3.0
  */
 import {
   useMutation,
@@ -20,10 +20,15 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AssignmentDetailResponse,
+  AssignmentListResponse,
   CourseListResponse,
+  CreateAssignmentRequest,
+  CreateAssignmentResponse,
   DepartmentListResponse,
   ErrorResponse,
   HealthStatus,
+  ListAssignmentsParams,
   ListCoursesByDepartmentParams,
   ListSchoolsParams,
   SchoolListResponse,
@@ -528,6 +533,240 @@ export function useListCoursesByDepartment<TData = Awaited<ReturnType<typeof lis
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListCoursesByDepartmentQueryOptions(departmentId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAssignmentsUrl = (params?: ListAssignmentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/assignments?${stringifiedParams}` : `/api/v1/assignments`
+}
+
+/**
+ * Returns assignments ordered by newest first. Defaults to active status.
+ * @summary List assignments
+ */
+export const listAssignments = async (params?: ListAssignmentsParams, options?: RequestInit): Promise<AssignmentListResponse> => {
+
+  return customFetch<AssignmentListResponse>(getListAssignmentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAssignmentsQueryKey = (params?: ListAssignmentsParams,) => {
+    return [
+    `/api/v1/assignments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAssignmentsQueryOptions = <TData = Awaited<ReturnType<typeof listAssignments>>, TError = ErrorType<ErrorResponse>>(params?: ListAssignmentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssignments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAssignmentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAssignments>>> = ({ signal }) => listAssignments(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAssignments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAssignmentsQueryResult = NonNullable<Awaited<ReturnType<typeof listAssignments>>>
+export type ListAssignmentsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List assignments
+ */
+
+export function useListAssignments<TData = Awaited<ReturnType<typeof listAssignments>>, TError = ErrorType<ErrorResponse>>(
+ params?: ListAssignmentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssignments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAssignmentsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAssignmentUrl = () => {
+
+
+
+
+  return `/api/v1/assignments`
+}
+
+/**
+ * @summary Create a new assignment
+ */
+export const createAssignment = async (createAssignmentRequest: CreateAssignmentRequest, options?: RequestInit): Promise<CreateAssignmentResponse> => {
+
+  return customFetch<CreateAssignmentResponse>(getCreateAssignmentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createAssignmentRequest)
+  }
+);}
+
+
+
+
+
+export const getCreateAssignmentMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAssignment>>, TError,{data: BodyType<CreateAssignmentRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAssignment>>, TError,{data: BodyType<CreateAssignmentRequest>}, TContext> => {
+
+const mutationKey = ['createAssignment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAssignment>>, {data: BodyType<CreateAssignmentRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAssignment(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAssignmentMutationResult = NonNullable<Awaited<ReturnType<typeof createAssignment>>>
+    export type CreateAssignmentMutationBody = BodyType<CreateAssignmentRequest>
+    export type CreateAssignmentMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Create a new assignment
+ */
+export const useCreateAssignment = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAssignment>>, TError,{data: BodyType<CreateAssignmentRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAssignment>>,
+        TError,
+        {data: BodyType<CreateAssignmentRequest>},
+        TContext
+      > => {
+      return useMutation(getCreateAssignmentMutationOptions(options));
+    }
+
+export const getGetAssignmentUrl = (assignmentId: string,) => {
+
+
+
+
+  return `/api/v1/assignments/${assignmentId}`
+}
+
+/**
+ * Returns a single assignment with attachments and context sections.
+ * @summary Get assignment detail
+ */
+export const getAssignment = async (assignmentId: string, options?: RequestInit): Promise<AssignmentDetailResponse> => {
+
+  return customFetch<AssignmentDetailResponse>(getGetAssignmentUrl(assignmentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAssignmentQueryKey = (assignmentId: string,) => {
+    return [
+    `/api/v1/assignments/${assignmentId}`
+    ] as const;
+    }
+
+
+export const getGetAssignmentQueryOptions = <TData = Awaited<ReturnType<typeof getAssignment>>, TError = ErrorType<ErrorResponse>>(assignmentId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAssignment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAssignmentQueryKey(assignmentId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAssignment>>> = ({ signal }) => getAssignment(assignmentId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: assignmentId !== null && assignmentId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAssignment>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAssignmentQueryResult = NonNullable<Awaited<ReturnType<typeof getAssignment>>>
+export type GetAssignmentQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get assignment detail
+ */
+
+export function useGetAssignment<TData = Awaited<ReturnType<typeof getAssignment>>, TError = ErrorType<ErrorResponse>>(
+ assignmentId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAssignment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAssignmentQueryOptions(assignmentId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

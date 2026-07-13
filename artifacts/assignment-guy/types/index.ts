@@ -49,6 +49,75 @@ export const LEVEL_LABELS: Record<number, string> = {
   0: 'Other',
 };
 
+// ─── Assignment types ─────────────────────────────────────────────────────────
+
+export type VerificationStatus =
+  | 'unverified'
+  | 'community_confirmed'
+  | 'trusted_contributor_verified';
+
+export type AssignmentStatus = 'active' | 'closed' | 'archived';
+
+export type AssignmentType =
+  | 'assignment'
+  | 'exam'
+  | 'quiz'
+  | 'lab'
+  | 'project';
+
+export const ASSIGNMENT_TYPE_LABELS: Record<AssignmentType, string> = {
+  assignment: 'Assignment',
+  exam: 'Exam',
+  quiz: 'Quiz',
+  lab: 'Lab',
+  project: 'Project',
+};
+
+export interface AssignmentAttachment {
+  attachment_id: string;
+  assignment_id: string;
+  attachment_type: 'image' | 'pdf' | 'text';
+  url: string | null;
+  filename: string | null;
+  file_size: number | null;
+  sort_order: number;
+}
+
+export interface AssignmentContextSection {
+  context_id: string;
+  assignment_id: string;
+  section_title: string;
+  content: string;
+  sort_order: number;
+}
+
+/** Summary shape returned by GET /assignments (list view). */
+export interface AssignmentSummary {
+  assignment_id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  assignment_type: AssignmentType;
+  status: AssignmentStatus;
+  verification_status: VerificationStatus;
+  discussion_count: number;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  course_id: string;
+  course_name: string;
+  course_code: string;
+  uploader_display_name: string;
+}
+
+/** Full shape returned by GET /assignments/:id (detail view). */
+export interface AssignmentDetail extends AssignmentSummary {
+  attachments: AssignmentAttachment[];
+  context: AssignmentContextSection[];
+}
+
+// ─── API response wrapper types ───────────────────────────────────────────────
+
 // API response wrapper types
 export interface ApiResponse<T> {
   success: boolean;

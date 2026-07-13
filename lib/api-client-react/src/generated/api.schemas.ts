@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Assignment Guy API — contract-first specification
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.3.0
  */
 export type UserProfileRole = typeof UserProfileRole[keyof typeof UserProfileRole];
 
@@ -84,6 +84,72 @@ export interface CourseListResponse {
   data: Course[];
 }
 
+export interface AssignmentSummary {
+  assignment_id: string;
+  title: string;
+  description?: string | null;
+  due_date?: string | null;
+  assignment_type: string;
+  status: string;
+  verification_status: string;
+  discussion_count: number;
+  created_at: string;
+  updated_at: string;
+  course_id: string;
+  course_name: string;
+  course_code: string;
+  uploader_display_name: string;
+}
+
+export interface AssignmentAttachmentItem {
+  attachment_id: string;
+  attachment_type: string;
+  url?: string | null;
+  filename?: string | null;
+  file_size?: number | null;
+  sort_order: number;
+}
+
+export interface AssignmentContextItem {
+  context_id: string;
+  section_title: string;
+  content: string;
+  sort_order: number;
+}
+
+export type AssignmentDetail = AssignmentSummary & {
+  attachments: AssignmentAttachmentItem[];
+  context: AssignmentContextItem[];
+};
+
+export interface CreateAssignmentRequest {
+  courseId: string;
+  title: string;
+  description?: string;
+  dueDate?: string;
+  assignmentType?: string;
+}
+
+export interface AssignmentListResponse {
+  success: boolean;
+  data: AssignmentSummary[];
+  total: number;
+}
+
+export interface AssignmentDetailResponse {
+  success: boolean;
+  data: AssignmentDetail;
+}
+
+export type CreateAssignmentResponseData = {
+  assignment_id: string;
+};
+
+export interface CreateAssignmentResponse {
+  success: boolean;
+  data: CreateAssignmentResponseData;
+}
+
 export interface ErrorResponse {
   success: boolean;
   message: string;
@@ -106,5 +172,28 @@ export type ListCoursesByDepartmentParams = {
  * Filter by academic level (1=Year1, 2=Year2, 3=Year3, 4=Year4, 5=Postgrad, 0=Other)
  */
 level?: number;
+};
+
+export type ListAssignmentsParams = {
+/**
+ * Filter by course ID
+ */
+courseId?: string;
+/**
+ * Partial title match (case-insensitive)
+ */
+search?: string;
+/**
+ * Assignment status filter: active | closed | archived
+ */
+status?: string;
+/**
+ * Max results (default 30, max 100)
+ */
+limit?: number;
+/**
+ * Pagination offset (default 0)
+ */
+offset?: number;
 };
 

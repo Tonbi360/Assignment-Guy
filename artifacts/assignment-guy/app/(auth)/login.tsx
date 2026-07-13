@@ -12,6 +12,7 @@ import {
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -59,9 +60,10 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await signIn(email.trim(), password);
-      // Navigation is handled by AuthContext effect in _layout.tsx
+      // Navigation handled by root _layout route guard
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Sign in failed. Please try again.';
+      const message =
+        err instanceof Error ? err.message : 'Sign in failed. Please try again.';
       setGeneralError(message);
     } finally {
       setLoading(false);
@@ -82,6 +84,21 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* Back button — top-right, below status bar */}
+        <View style={[styles.topBar, { paddingTop: insets.top + SPACING.xs }]}>
+          <View style={styles.spacer} />
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={12}
+            style={[styles.backButton, { backgroundColor: colors.muted }]}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <Ionicons name="arrow-back" size={20} color={colors.foreground} />
+          </Pressable>
+        </View>
+
+        {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.foreground }]}>
             Welcome back
@@ -91,6 +108,7 @@ export default function LoginScreen() {
           </Text>
         </View>
 
+        {/* Form */}
         <View style={styles.form}>
           <Input
             label="Email"
@@ -119,14 +137,22 @@ export default function LoginScreen() {
           />
 
           {generalError ? (
-            <View style={[styles.errorBox, { backgroundColor: colors.errorLight, borderRadius: colors.radius }]}>
+            <View
+              style={[
+                styles.errorBox,
+                { backgroundColor: colors.errorLight, borderRadius: 8 },
+              ]}
+            >
               <Text style={[styles.errorBoxText, { color: colors.error }]}>
                 {generalError}
               </Text>
             </View>
           ) : null}
 
-          <Pressable onPress={() => {/* TODO: forgot password */}} hitSlop={8}>
+          <Pressable
+            onPress={() => router.push('/(auth)/forgot-password')}
+            hitSlop={8}
+          >
             <Text style={[styles.forgotPassword, { color: colors.primary }]}>
               Forgot password?
             </Text>
@@ -142,11 +168,15 @@ export default function LoginScreen() {
           />
         </View>
 
+        {/* Footer */}
         <View style={styles.footer}>
           <Text style={[styles.footerText, { color: colors.mutedForeground }]}>
             Don't have an account?{' '}
           </Text>
-          <Pressable onPress={() => router.replace('/(auth)/register')} hitSlop={8}>
+          <Pressable
+            onPress={() => router.replace('/(auth)/register')}
+            hitSlop={8}
+          >
             <Text style={[styles.footerLink, { color: colors.primary }]}>
               Create one
             </Text>
@@ -164,8 +194,21 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xxl,
     gap: SPACING.xl,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  spacer: {
+    flex: 1,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   header: {
     gap: SPACING.xs,
