@@ -19,7 +19,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 import { SPACING, BORDER_RADIUS } from '@/constants/colors';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+// TO THIS:
+import { Skeleton as LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { AssignmentCard } from '@/components/ui/AssignmentCard';
 import { useAuth } from '@/context/AuthContext';
 import { useListAssignments } from '@workspace/api-client-react';
